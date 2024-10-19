@@ -1,4 +1,5 @@
 mod ast;
+
 trait Client {
     fn accept(&self, visitor: &dyn Visitor);
 }
