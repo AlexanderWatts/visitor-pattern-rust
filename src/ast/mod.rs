@@ -2,14 +2,17 @@ pub trait Visitor<T> {
     fn visit_property(&self, property: &Property) -> T;
 }
 pub trait AstNode {
-    fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T; 
+    fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T;
 }
 
 pub struct AstPrinter;
 
 impl Visitor<String> for AstPrinter {
     fn visit_property(&self, property: &Property) -> String {
-        format!("{}{}{}", property.identifier, property.colon, property.value)
+        format!(
+            "{}{}{}",
+            property.identifier, property.colon, property.value
+        )
     }
 }
 
