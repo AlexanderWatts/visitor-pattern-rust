@@ -1,14 +1,14 @@
 //!
 //! let email_sender = EmailSender;
-//! 
+//!
 //! let b = Bank { name: "b23".to_string() };
 //! b.accept(&email_sender);
-//! 
+//!
 //! let h = Hospital { name: "h88".to_string() };
 //! h.accept(&email_sender);
-//! 
+//!
 //! email_sender.send(&b);
-//! 
+//!
 //! trait Client {
 //!     fn accept(&self, visitor: &dyn Visitor);
 //! }
@@ -48,7 +48,6 @@ impl EmailSender {
     pub fn send(&self, client: &dyn Client) {
         client.accept(self);
     }
-
 }
 
 impl Visitor for EmailSender {
