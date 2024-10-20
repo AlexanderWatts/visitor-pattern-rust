@@ -1,5 +1,7 @@
-use super::{ast::{AstNode, Object, Property}, token::{Token, TokenType}};
-
+use super::{
+    ast::{AstNode, Literal, Object, Property},
+    token::{Token, TokenType},
+};
 
 pub struct Parser {
     current: usize,
@@ -8,10 +10,7 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self {
-            current: 0,
-            tokens,
-        }
+        Self { current: 0, tokens }
     }
 
     pub fn parse(&mut self) -> impl AstNode {
@@ -25,6 +24,11 @@ impl Parser {
 
         if self.get_current_token().token_type != TokenType::RightBrace {
             properties.push(self.parse_property());
+
+            while self.get_current_token().token_type == TokenType::Comma {
+                self.get_current_advance();
+                properties.push(self.parse_property());
+            }
         }
 
         let right = self.get_current_advance().clone();
@@ -33,11 +37,33 @@ impl Parser {
     }
 
     fn parse_property(&mut self) -> Property {
-        let key = self.get_current_advance().clone().literal;
+        let key = self
+            .get_current_or_error(TokenType::Identifier, "Expected identifier")
+            .unwrap()
+            .clone()
+            .literal;
+
         let colon = self.get_current_advance().clone();
-        let value = self.get_current_advance().clone().literal;
+        let value = self.parse_literal();
 
         Property::new(key, colon, value)
+    }
+
+    fn parse_literal(&mut self) -> Literal {
+        Literal::new(self.get_current_advance().literal.clone())
+    }
+
+    fn get_current_or_error(
+        &mut self,
+        token_type: TokenType,
+        error: &str,
+    ) -> Result<&Token, String> {
+        if token_type == self.get_current_token().token_type {
+            self.current += 1;
+            return Ok(self.get_current_token());
+        }
+
+        Err(error.to_string())
     }
 
     fn get_current_advance(&mut self) -> &Token {

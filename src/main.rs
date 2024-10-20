@@ -1,5 +1,8 @@
 use parser::{
-    ast::{Object, Property}, parser::Parser, printer::Printer, token::{Token, TokenType}
+    ast::{Literal, Object, Property},
+    parser::Parser,
+    printer::Printer,
+    token::{Token, TokenType},
 };
 
 mod ast;
@@ -12,7 +15,7 @@ fn main() {
     let p1 = Property::new(
         "msg".to_string(),
         Token::new(TokenType::Colon, ":"),
-        "hello".to_string(),
+        Literal::new(String::from("hello")),
     );
 
     let root = Object::new(
@@ -20,12 +23,16 @@ fn main() {
         vec![p1],
         Token::new(TokenType::String, "}"),
     );
-    
+
     let mut parser = Parser::new(vec![
         Token::new(TokenType::LeftBrace, "{"),
         Token::new(TokenType::Identifier, "msg"),
         Token::new(TokenType::Colon, ":"),
-        Token::new(TokenType::String, "hello"),
+        Token::new(TokenType::String, "This is a message"),
+        Token::new(TokenType::Comma, ","),
+        Token::new(TokenType::Identifier, "msg"),
+        Token::new(TokenType::Colon, ":"),
+        Token::new(TokenType::String, "This is a message"),
         Token::new(TokenType::RightBrace, "}"),
     ]);
 

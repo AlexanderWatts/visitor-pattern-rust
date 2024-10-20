@@ -6,7 +6,8 @@ pub trait Visitor {
     type T;
 
     fn visit_property(&self, property: &Property) -> Self::T;
-    fn visit_object(&self, property: &Object) -> Self::T;
+    fn visit_object(&self, object: &Object) -> Self::T;
+    fn visit_literal(&self, literal: &Literal) -> Self::T;
 }
 
 pub trait AstNode: Debug {
@@ -17,11 +18,11 @@ pub trait AstNode: Debug {
 pub struct Property {
     pub key: String,
     pub colon: Token,
-    pub value: String,
+    pub value: Literal,
 }
 
 impl Property {
-    pub fn new(key: String, colon: Token, value: String) -> Self {
+    pub fn new(key: String, colon: Token, value: Literal) -> Self {
         Self { key, colon, value }
     }
 }
@@ -52,5 +53,22 @@ impl Object {
 impl AstNode for Object {
     fn accept(&self, visitor: &impl Visitor) {
         visitor.visit_object(&self);
+    }
+}
+
+#[derive(Debug)]
+pub struct Literal {
+    pub value: String,
+}
+
+impl Literal {
+    pub fn new(value: String) -> Self {
+        Self { value }
+    }
+}
+
+impl AstNode for Literal {
+    fn accept(&self, visitor: &impl Visitor) {
+        visitor.visit_literal(self);
     }
 }

@@ -19,4 +19,8 @@ impl Visitor for Printer {
     fn visit_object(&self, property: &super::ast::Object) -> Self::T {
         format!("{}", property.left_brace.literal)
     }
+
+    fn visit_literal(&self, literal: &super::ast::Literal) -> Self::T {
+        format!("{}", literal.value)
+    }
 }

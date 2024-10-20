@@ -25,6 +25,9 @@ pub struct Token {
 
 impl Token {
     pub fn new(token_type: TokenType, literal: &str) -> Self {
-        Self { token_type, literal: String::from(literal) }
+        Self {
+            token_type,
+            literal: String::from(literal),
+        }
     }
 }
