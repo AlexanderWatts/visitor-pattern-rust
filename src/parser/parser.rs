@@ -37,7 +37,7 @@ impl Parser {
     }
 
     fn parse_object(&mut self) -> Result<impl AstNode, ParserError> {
-        let left = self.get_current_advance().clone();
+        let left = self.get_current_or_error(TokenType::LeftBrace, "Expected {")?.clone();
 
         let mut properties = vec![];
 
@@ -50,7 +50,9 @@ impl Parser {
             }
         }
 
-        let right = self.get_current_advance().clone();
+        let right = self.get_current_or_error(TokenType::RightBrace, "Expected }")?.clone();
+
+        dbg!(&right);
 
         Ok(Object::new(left, properties, right))
     }
@@ -61,7 +63,10 @@ impl Parser {
             .clone()
             .literal;
 
-        let colon = self.get_current_advance().clone();
+        let colon = self
+            .get_current_or_error(TokenType::Colon, "Expected :")?
+            .clone();
+
         let value = self.parse_literal();
 
         Ok(Property::new(key, colon, value))
@@ -77,8 +82,7 @@ impl Parser {
         error: &str,
     ) -> Result<&Token, ParserError> {
         if token_type == self.get_current_token().token_type {
-            self.current += 1;
-            return Ok(self.get_current_token());
+            return Ok(self.get_current_advance());
         }
 
         Err(ParserError::UnexpectedToken(error.to_string()))
