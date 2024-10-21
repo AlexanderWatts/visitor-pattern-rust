@@ -9,6 +9,10 @@ mod parser;
 
 fn main() {
     let mut parser = Parser::new(vec![
+        Token::new(TokenType::LeftBracket, "["),
+        Token::new(TokenType::True, "true"),
+
+        Token::new(TokenType::Comma, ","),
         Token::new(TokenType::LeftBrace, "{"),
         Token::new(TokenType::Identifier, "msg"),
         Token::new(TokenType::Colon, ":"),
@@ -43,6 +47,7 @@ fn main() {
         Token::new(TokenType::RightBrace, "}"),
 
         Token::new(TokenType::RightBrace, "}"),
+        Token::new(TokenType::RightBracket, "]"),
     ]);
 
     let res = parser.parse();

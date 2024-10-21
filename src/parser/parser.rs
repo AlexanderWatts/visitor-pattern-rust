@@ -33,7 +33,11 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
-        self.parse_object()
+        if self.get_current_token().token_type == TokenType::LeftBrace {
+            return self.parse_object();
+        }
+
+        self.parse_array()
     }
 
     fn parse_object(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
