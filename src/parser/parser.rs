@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use super::{
-    ast::{AstNode, Literal, Object, Property},
+    ast::{Array, AstNode, Literal, Object, Property},
     token::{Token, TokenType},
 };
 
@@ -76,9 +76,34 @@ impl Parser {
         Ok(Box::new(Property::new(key, colon, value)))
     }
 
+    fn parse_array(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
+        let left_bracket = self.get_current_or_error(TokenType::LeftBracket, "Expected [")?.clone();
+
+        let mut nodes = vec![];
+
+            dbg!(self.get_current_token());
+        if self.get_current_token().token_type != TokenType::RightBracket {
+            dbg!(self.get_current_token());
+            nodes.push(self.parse_literal()?);
+
+            while self.get_current_token().token_type == TokenType::Comma {
+                self.get_current_advance();
+                nodes.push(self.parse_literal()?);
+            }
+        }
+
+        let right_bracket = self.get_current_or_error(TokenType::RightBracket, "Expected ]")?.clone();
+
+        Ok(Box::new(Array::new(left_bracket, nodes, right_bracket)))
+    }
+
     fn parse_literal(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
         if self.get_current_token().token_type == TokenType::LeftBrace {
             return self.parse_object();
+        }
+
+        if self.get_current_token().token_type == TokenType::LeftBracket {
+            return self.parse_array();
         }
 
         if self.get_current_token().token_type == TokenType::String {

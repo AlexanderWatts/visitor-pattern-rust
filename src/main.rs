@@ -17,6 +17,31 @@ fn main() {
         Token::new(TokenType::Identifier, "msg"),
         Token::new(TokenType::Colon, ":"),
         Token::new(TokenType::String, "This is a new message"),
+        Token::new(TokenType::Comma, ","),
+        
+        Token::new(TokenType::Identifier, "array"),
+        Token::new(TokenType::Colon, ":"),
+        Token::new(TokenType::LeftBracket, "["),
+        Token::new(TokenType::String, "Array string, whooo"),
+        Token::new(TokenType::Comma, ","),
+        Token::new(TokenType::LeftBracket, "["),
+        Token::new(TokenType::RightBracket, "]"),
+
+        Token::new(TokenType::Comma, ","),
+
+        Token::new(TokenType::True, "true"),
+
+        Token::new(TokenType::RightBracket, "]"),
+        Token::new(TokenType::Comma, ","),
+
+        Token::new(TokenType::Identifier, "obj"),
+        Token::new(TokenType::Colon, ":"),
+        Token::new(TokenType::LeftBrace, "{"),
+        Token::new(TokenType::Identifier, "msg"),
+        Token::new(TokenType::Colon, ":"),
+        Token::new(TokenType::String, "This is a message"),
+        Token::new(TokenType::RightBrace, "}"),
+
         Token::new(TokenType::RightBrace, "}"),
     ]);
 

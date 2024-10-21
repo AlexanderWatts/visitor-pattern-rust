@@ -5,6 +5,7 @@ use super::token::Token;
 pub trait Visitor {
     fn visit_property(&self, property: &Property);
     fn visit_object(&self, object: &Object);
+    fn visit_array(&self, array: &Array);
     fn visit_literal(&self, literal: &Literal);
 }
 
@@ -51,6 +52,33 @@ impl Object {
 impl AstNode for Object {
     fn accept(&self, visitor: &dyn Visitor) {
         visitor.visit_object(&self);
+    }
+}
+
+#[derive(Debug)]
+pub struct Array {
+    left_bracket: Token,
+    nodes: Vec<Box<dyn AstNode>>,
+    right_bracket: Token,
+}
+
+impl Array {
+    pub fn new(
+        left_bracket: Token,
+        nodes: Vec<Box<dyn AstNode>>,
+        right_bracket: Token,
+    ) -> Self {
+        Self {
+            left_bracket,
+            nodes,
+            right_bracket,
+        }
+    }
+}
+
+impl AstNode for Array {
+    fn accept(&self, visitor: &dyn Visitor) {
+        visitor.visit_array(self);
     }
 }
 
