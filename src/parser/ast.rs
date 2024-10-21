@@ -3,32 +3,30 @@ use std::fmt::Debug;
 use super::token::Token;
 
 pub trait Visitor {
-    type T;
-
-    fn visit_property(&self, property: &Property) -> Self::T;
-    fn visit_object(&self, object: &Object) -> Self::T;
-    fn visit_literal(&self, literal: &Literal) -> Self::T;
+    fn visit_property(&self, property: &Property);
+    fn visit_object(&self, object: &Object);
+    fn visit_literal(&self, literal: &Literal);
 }
 
 pub trait AstNode: Debug {
-    fn accept(&self, visitor: &impl Visitor);
+    fn accept(&self, visitor: &dyn Visitor);
 }
 
 #[derive(Debug)]
 pub struct Property {
     pub key: String,
     pub colon: Token,
-    pub value: Literal,
+    pub value: Box<dyn AstNode>,
 }
 
 impl Property {
-    pub fn new(key: String, colon: Token, value: Literal) -> Self {
+    pub fn new(key: String, colon: Token, value: Box<dyn AstNode>) -> Self {
         Self { key, colon, value }
     }
 }
 
 impl AstNode for Property {
-    fn accept(&self, visitor: &impl Visitor) {
+    fn accept(&self, visitor: &dyn Visitor) {
         visitor.visit_property(&self);
     }
 }
@@ -36,12 +34,12 @@ impl AstNode for Property {
 #[derive(Debug)]
 pub struct Object {
     pub left_brace: Token,
-    pub properties: Vec<Property>,
+    pub properties: Vec<Box<dyn AstNode>>,
     pub right_brace: Token,
 }
 
 impl Object {
-    pub fn new(left_brace: Token, properties: Vec<Property>, right_brace: Token) -> Self {
+    pub fn new(left_brace: Token, properties: Vec<Box<dyn AstNode>>, right_brace: Token) -> Self {
         Self {
             left_brace,
             properties,
@@ -51,7 +49,7 @@ impl Object {
 }
 
 impl AstNode for Object {
-    fn accept(&self, visitor: &impl Visitor) {
+    fn accept(&self, visitor: &dyn Visitor) {
         visitor.visit_object(&self);
     }
 }
@@ -68,7 +66,7 @@ impl Literal {
 }
 
 impl AstNode for Literal {
-    fn accept(&self, visitor: &impl Visitor) {
+    fn accept(&self, visitor: &dyn Visitor) {
         visitor.visit_literal(self);
     }
 }

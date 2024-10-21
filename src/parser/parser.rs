@@ -10,7 +10,7 @@ pub enum ParserError {
     UnexpectedToken(String),
 }
 
-impl std::error::Error for ParserError { }
+impl std::error::Error for ParserError {}
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -32,12 +32,14 @@ impl Parser {
         Self { current: 0, tokens }
     }
 
-    pub fn parse(&mut self) -> Result<impl AstNode, ParserError> {
+    pub fn parse(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
         self.parse_object()
     }
 
-    fn parse_object(&mut self) -> Result<impl AstNode, ParserError> {
-        let left = self.get_current_or_error(TokenType::LeftBrace, "Expected {")?.clone();
+    fn parse_object(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
+        let left = self
+            .get_current_or_error(TokenType::LeftBrace, "Expected {")?
+            .clone();
 
         let mut properties = vec![];
 
@@ -50,14 +52,16 @@ impl Parser {
             }
         }
 
-        let right = self.get_current_or_error(TokenType::RightBrace, "Expected }")?.clone();
+        let right = self
+            .get_current_or_error(TokenType::RightBrace, "Expected }")?
+            .clone();
 
         dbg!(&right);
 
-        Ok(Object::new(left, properties, right))
+        Ok(Box::new(Object::new(left, properties, right)))
     }
 
-    fn parse_property(&mut self) -> Result<Property, ParserError> {
+    fn parse_property(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
         let key = self
             .get_current_or_error(TokenType::Identifier, "Expected identifier")?
             .clone()
@@ -67,13 +71,41 @@ impl Parser {
             .get_current_or_error(TokenType::Colon, "Expected :")?
             .clone();
 
-        let value = self.parse_literal();
+        let value = self.parse_literal()?;
 
-        Ok(Property::new(key, colon, value))
+        Ok(Box::new(Property::new(key, colon, value)))
     }
 
-    fn parse_literal(&mut self) -> Literal {
-        Literal::new(self.get_current_advance().literal.clone())
+    fn parse_literal(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
+        if self.get_current_token().token_type == TokenType::LeftBrace {
+            return self.parse_object();
+        }
+
+        if self.get_current_token().token_type == TokenType::String {
+            return Ok(Box::new(Literal::new(
+                self.get_current_advance().literal.clone(),
+            )));
+        }
+
+        if self.get_current_token().token_type == TokenType::Number {
+            return Ok(Box::new(Literal::new(
+                self.get_current_advance().literal.clone(),
+            )));
+        }
+
+        if self.get_current_token().token_type == TokenType::True {
+            return Ok(Box::new(Literal::new(
+                self.get_current_advance().literal.clone(),
+            )));
+        }
+
+        if self.get_current_token().token_type == TokenType::False {
+            return Ok(Box::new(Literal::new(
+                self.get_current_advance().literal.clone(),
+            )));
+        }
+
+        Err(ParserError::UnexpectedToken("Unknown literal".to_string()))
     }
 
     fn get_current_or_error(

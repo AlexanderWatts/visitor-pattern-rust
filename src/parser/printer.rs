@@ -10,17 +10,15 @@ impl Printer {
 }
 
 impl Visitor for Printer {
-    type T = String;
-
-    fn visit_property(&self, property: &super::ast::Property) -> Self::T {
-        format!("{}", property.colon.literal)
+    fn visit_property(&self, property: &super::ast::Property) {
+        let _ = format!("{}", property.colon.literal);
     }
 
-    fn visit_object(&self, property: &super::ast::Object) -> Self::T {
-        format!("{}", property.left_brace.literal)
+    fn visit_object(&self, property: &super::ast::Object) {
+        let _ = format!("{}", property.left_brace.literal);
     }
 
-    fn visit_literal(&self, literal: &super::ast::Literal) -> Self::T {
-        format!("{}", literal.value)
+    fn visit_literal(&self, literal: &super::ast::Literal) {
+        let _ = format!("{}", literal.value);
     }
 }
