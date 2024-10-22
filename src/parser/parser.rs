@@ -81,11 +81,13 @@ impl Parser {
     }
 
     fn parse_array(&mut self) -> Result<Box<dyn AstNode>, ParserError> {
-        let left_bracket = self.get_current_or_error(TokenType::LeftBracket, "Expected [")?.clone();
+        let left_bracket = self
+            .get_current_or_error(TokenType::LeftBracket, "Expected [")?
+            .clone();
 
         let mut nodes = vec![];
 
-            dbg!(self.get_current_token());
+        dbg!(self.get_current_token());
         if self.get_current_token().token_type != TokenType::RightBracket {
             dbg!(self.get_current_token());
             nodes.push(self.parse_literal()?);
@@ -96,7 +98,9 @@ impl Parser {
             }
         }
 
-        let right_bracket = self.get_current_or_error(TokenType::RightBracket, "Expected ]")?.clone();
+        let right_bracket = self
+            .get_current_or_error(TokenType::RightBracket, "Expected ]")?
+            .clone();
 
         Ok(Box::new(Array::new(left_bracket, nodes, right_bracket)))
     }

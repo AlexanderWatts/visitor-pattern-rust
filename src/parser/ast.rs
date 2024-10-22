@@ -63,11 +63,7 @@ pub struct Array {
 }
 
 impl Array {
-    pub fn new(
-        left_bracket: Token,
-        nodes: Vec<Box<dyn AstNode>>,
-        right_bracket: Token,
-    ) -> Self {
+    pub fn new(left_bracket: Token, nodes: Vec<Box<dyn AstNode>>, right_bracket: Token) -> Self {
         Self {
             left_bracket,
             nodes,
