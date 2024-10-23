@@ -1,4 +1,4 @@
-use super::token::Token;
+use super::token::{Token, TokenType};
 
 pub trait Visitor<T> {
     fn visit_primary(&self, value: &Literal) -> T;
@@ -43,6 +43,70 @@ impl Node {
             Self::Property(key, colon, value) => visitor.visit_property(key, colon, value),
             Self::List(left, nodes, right) => visitor.visit_list(left, nodes, right),
         }
+    }
+}
+
+pub struct Parser {
+    current: usize,
+    tokens: Vec<Token>,
+}
+
+impl Parser {
+    pub fn new(tokens: Vec<Token>) -> Self {
+        Self {
+            current: 0,
+            tokens,
+        }
+    }
+
+    pub fn parse(&mut self) -> Result<Node, String> {
+        self.parse_literal()
+    }
+
+    fn parser_property(&mut self) -> Result<Node, String> {
+        let key = self.parse_literal()?;
+        let colon = self.get_or_error(TokenType::Colon, "Expected colon")?.clone();
+        let value = self.parse_literal()?;
+
+        Ok(Node::Property(Box::new(key), colon, Box::new(value)))
+    }
+
+    fn parse_literal(&mut self) -> Result<Node, String> {
+        if self.match_token(TokenType::String) {
+            return Ok(Node::Primary(Literal::String(self.get_token_advance().literal.clone())));
+        }
+
+       Err("Unknown literal".to_string())
+    }
+
+    fn get_or_error(&mut self, token_type: TokenType, error: &str) -> Result<&Token, String> {
+        if self.match_token(token_type) {
+            return Ok(self.get_token_advance());
+        }
+
+        Err(error.to_string())
+    }
+
+    fn match_token(&mut self, token_type: TokenType) -> bool {
+        if self.get_current_token().token_type == token_type {
+            return true;
+        }
+
+        false
+    }
+
+    fn get_token_advance(&mut self) -> &Token {
+        let token = self.tokens.get(self.current).unwrap();
+        self.current += 1;
+        token
+    }
+
+    fn get_current_token(&self) -> &Token {
+        self.tokens.get(self.current).unwrap()
+    }
+
+    fn is_eof(&self) -> bool {
+        self.current >= self.tokens.len()
     }
 }
 
@@ -127,5 +191,17 @@ mod node_tests {
         let res = pp.print(&root).to_string();
 
         print!("{}", res);
+    }
+
+    #[test]
+    fn parse() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenType::LeftBrace, "{"),
+            Token::new(TokenType::RightBrace, "}"),
+        ]);
+        let ast = parser.parse();
+
+        println!("{:#?}", ast);
+        
     }
 }
