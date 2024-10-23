@@ -11,7 +11,6 @@ pub trait Visitor<T> {
 pub enum Literal {
     String(String),
     Number(i32),
-    Bool(bool),
     Null
 }
 
@@ -20,7 +19,6 @@ impl ToString for Literal {
         match self {
             Literal::String(value) => value.to_string(),
             Literal::Number(value) => value.to_string(),
-            Literal::Bool(value) => value.to_string(),
             Literal::Null => "null".to_string(),
         }
     }
@@ -56,10 +54,6 @@ impl PrettyPrint {
 
 impl Visitor<String> for PrettyPrint {
     fn visit_primary(&self, value: &Literal) -> String {
-        if let Literal::String(value) = value {
-            return format!("\"{}\"", value);
-        }
-
         value.to_string()
     }
 
@@ -110,12 +104,12 @@ mod node_tests {
                     Box::new(Node::Primary(Literal::Number(32))),
                 ),
                 Node::Property(
-                    Box::new(Node::Primary(Literal::String("data".to_string()))),
+                    Box::new(Node::Primary("data".to_string())),
                     Token::new(TokenType::Colon, ":"),
                     Box::new(Node::List(
                         Token::new(TokenType::LeftBracket, "["),
                         vec![
-                            Node::Primary(Literal::Bool(false)),
+                            Node::Primary("false".to_string()),
                         ],
                         Token::new(TokenType::RightBracket, "]"),
                     )),
