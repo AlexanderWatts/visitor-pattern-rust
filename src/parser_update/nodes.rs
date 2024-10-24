@@ -42,7 +42,7 @@ pub trait Visitor<T> {
 #[derive(Debug, Clone)]
 pub enum Literal {
     String(String),
-    Number(i32),
+    Number(f32),
     Bool(bool),
     Null
 }
@@ -92,11 +92,6 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Node, String> {
-        if self.match_token(TokenType::LeftBrace) {
-            return self.parse_object();
-
-        }
-
         self.parse_literal()
     }
 
@@ -127,6 +122,25 @@ impl Parser {
         Ok(Node::Property(Box::new(key), colon, Box::new(value)))
     }
 
+    fn parse_list(&mut self) -> Result<Node, String> {
+        let left = self.get_or_error(TokenType::LeftBracket, "Expected [")?.clone();
+
+        let mut properties = vec![];
+
+        if self.get_current_token().token_type !=  TokenType::RightBracket {
+            properties.push(self.parse_literal()?);
+
+            while self.match_token(TokenType::Comma) {
+                self.get_token_advance();
+                properties.push(self.parse_literal()?);
+            }
+        }
+
+        let right = self.get_or_error(TokenType::RightBracket, "Expected ]")?.clone();
+
+        Ok(Node::List(left, properties, right))
+    }
+
     fn parse_literal(&mut self) -> Result<Node, String> {
         if self.match_token(TokenType::String) {
             return Ok(Node::Primary(self.get_token_advance().clone().literal));
@@ -134,6 +148,26 @@ impl Parser {
 
         if self.match_token(TokenType::Number) {
             return Ok(Node::Primary(self.get_token_advance().clone().literal));
+        }
+
+        if self.match_token(TokenType::True) {
+            return Ok(Node::Primary(self.get_token_advance().clone().literal));
+        }
+
+        if self.match_token(TokenType::False) {
+            return Ok(Node::Primary(self.get_token_advance().clone().literal));
+        }
+
+        if self.match_token(TokenType::Null) {
+            return Ok(Node::Primary(self.get_token_advance().clone().literal));
+        }
+
+        if self.match_token(TokenType::LeftBracket) {
+            return self.parse_list();
+        }
+
+        if self.match_token(TokenType::LeftBrace) {
+            return self.parse_object();
         }
 
        Err("Unknown literal".to_string())
@@ -229,7 +263,7 @@ mod node_tests {
                 Node::Property(
                     Box::new(Node::Primary(Literal::Null)),
                     Token::new(TokenType::Colon, Literal::String(":".to_string())),
-                    Box::new(Node::Primary(Literal::Number(32))),
+                    Box::new(Node::Primary(Literal::Number(32.0))),
                 ),
                 Node::Property(
                     Box::new(Node::Primary(Literal::String("data".to_string()))),
@@ -254,15 +288,33 @@ mod node_tests {
     #[test]
     fn parse() {
         let mut parser = Parser::new(vec![
+            Token::new(TokenType::LeftBracket,  Literal::String("[".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
             Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
             Token::new(TokenType::String, Literal::String("message".to_string())),
             Token::new(TokenType::Colon, Literal::String(":".to_string())),
             Token::new(TokenType::String, Literal::Bool(true)),
-            Token::new(TokenType::RightBrace,  Literal::String("{".to_string())),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+
+            Token::new(TokenType::String, Literal::String("message".to_string())),
+            Token::new(TokenType::Colon, Literal::String(":".to_string())),
+            Token::new(TokenType::LeftBracket,  Literal::String("[".to_string())),
+            Token::new(TokenType::RightBracket,  Literal::String("]".to_string())),
+            Token::new(TokenType::RightBrace,  Literal::String("}".to_string())),
+            Token::new(TokenType::RightBracket,  Literal::String("]".to_string())),
+        ]);
+
+        let mut parser = Parser::new(vec![
+            Token::new(TokenType::String, Literal::Number(325.0)),
         ]);
         let ast = parser.parse();
 
+
         println!("{:#?}", ast);
         
+        let p = PrettyPrint;
+        let res = p.print(&ast.unwrap());
+        println!("{}", res);
     }
 }
