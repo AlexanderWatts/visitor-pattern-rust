@@ -129,11 +129,11 @@ impl Parser {
 
     fn parse_literal(&mut self) -> Result<Node, String> {
         if self.match_token(TokenType::String) {
-            return Ok(Node::Primary(Literal::String(self.get_token_advance().literal.clone())));
+            return Ok(Node::Primary(self.get_token_advance().clone().literal));
         }
 
         if self.match_token(TokenType::Number) {
-            return Ok(Node::Primary(Literal::Number(self.get_token_advance().literal.clone())));
+            return Ok(Node::Primary(self.get_token_advance().clone().literal));
         }
 
        Err("Unknown literal".to_string())
@@ -217,8 +217,6 @@ impl Visitor<String> for PrettyPrint {
 
 #[cfg(test)]
 mod node_tests {
-    use crate::parser::token::TokenType;
-
     use super::*;
 
     #[test]
@@ -226,31 +224,31 @@ mod node_tests {
         let pp = PrettyPrint;
 
         let root = Node::Object(
-            Token::new(TokenType::LeftBrace, "{"),
+            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
             vec![
                 Node::Property(
                     Box::new(Node::Primary(Literal::Null)),
-                    Token::new(TokenType::Colon, ":"),
+                    Token::new(TokenType::Colon, Literal::String(":".to_string())),
                     Box::new(Node::Primary(Literal::Number(32))),
                 ),
                 Node::Property(
                     Box::new(Node::Primary(Literal::String("data".to_string()))),
-                    Token::new(TokenType::Colon, ":"),
+                    Token::new(TokenType::Colon, Literal::String(":".to_string())),
                     Box::new(Node::List(
-                        Token::new(TokenType::LeftBracket, "["),
+                        Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
                         vec![
                             Node::Primary(Literal::Bool(false)),
                         ],
-                        Token::new(TokenType::RightBracket, "]"),
+                        Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
                     )),
                 ),
             ],
-            Token::new(TokenType::RightBrace, "}"),
+            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
         );
 
         let res = pp.print(&root).to_string();
 
-        //print!("{}", res);
+        println!("{}", res);
     }
 
     #[test]
@@ -258,9 +256,9 @@ mod node_tests {
         let mut parser = Parser::new(vec![
             Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
             Token::new(TokenType::String, Literal::String("message".to_string())),
-            Token::new(TokenType::Colon, ":"),
-            Token::new(TokenType::String, "Hello, World!"),
-            Token::new(TokenType::RightBrace, "}"),
+            Token::new(TokenType::Colon, Literal::String(":".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::RightBrace,  Literal::String("{".to_string())),
         ]);
         let ast = parser.parse();
 
