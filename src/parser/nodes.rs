@@ -60,10 +60,34 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Node, String> {
+        if self.match_token(TokenType::LeftBrace) {
+            return self.parse_object();
+
+        }
+
         self.parse_literal()
     }
 
-    fn parser_property(&mut self) -> Result<Node, String> {
+    fn parse_object(&mut self) -> Result<Node, String> {
+        let left = self.get_or_error(TokenType::LeftBrace, "Expected {")?.clone();
+
+        let mut properties = vec![];
+
+        if self.get_current_token().token_type !=  TokenType::RightBrace {
+            properties.push(self.parse_property()?);
+
+            while self.match_token(TokenType::Comma) {
+                self.get_token_advance();
+                properties.push(self.parse_property()?);
+            }
+        }
+
+        let right = self.get_or_error(TokenType::RightBrace, "Expected }")?.clone();
+
+        Ok(Node::Object(left, properties, right))
+    }
+
+    fn parse_property(&mut self) -> Result<Node, String> {
         let key = self.parse_literal()?;
         let colon = self.get_or_error(TokenType::Colon, "Expected colon")?.clone();
         let value = self.parse_literal()?;
@@ -190,13 +214,16 @@ mod node_tests {
 
         let res = pp.print(&root).to_string();
 
-        print!("{}", res);
+        //print!("{}", res);
     }
 
     #[test]
     fn parse() {
         let mut parser = Parser::new(vec![
             Token::new(TokenType::LeftBrace, "{"),
+            Token::new(TokenType::String, "message"),
+            Token::new(TokenType::Colon, ":"),
+            Token::new(TokenType::String, "Hello, World!"),
             Token::new(TokenType::RightBrace, "}"),
         ]);
         let ast = parser.parse();
