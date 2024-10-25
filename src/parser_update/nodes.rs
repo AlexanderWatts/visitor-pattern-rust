@@ -44,7 +44,7 @@ pub enum Literal {
     String(String),
     Number(f32),
     Bool(bool),
-    Null
+    Null,
 }
 
 impl ToString for Literal {
@@ -57,7 +57,6 @@ impl ToString for Literal {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum Node {
@@ -85,10 +84,7 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self {
-            current: 0,
-            tokens,
-        }
+        Self { current: 0, tokens }
     }
 
     pub fn parse(&mut self) -> Result<Node, String> {
@@ -96,11 +92,13 @@ impl Parser {
     }
 
     fn parse_object(&mut self) -> Result<Node, String> {
-        let left = self.get_or_error(TokenType::LeftBrace, "Expected {")?.clone();
+        let left = self
+            .get_or_error(TokenType::LeftBrace, "Expected {")?
+            .clone();
 
         let mut properties = vec![];
 
-        if self.get_current_token().token_type !=  TokenType::RightBrace {
+        if self.get_current_token().token_type != TokenType::RightBrace {
             properties.push(self.parse_property()?);
 
             while self.match_token(TokenType::Comma) {
@@ -109,25 +107,31 @@ impl Parser {
             }
         }
 
-        let right = self.get_or_error(TokenType::RightBrace, "Expected }")?.clone();
+        let right = self
+            .get_or_error(TokenType::RightBrace, "Expected }")?
+            .clone();
 
         Ok(Node::Object(left, properties, right))
     }
 
     fn parse_property(&mut self) -> Result<Node, String> {
         let key = self.parse_literal()?;
-        let colon = self.get_or_error(TokenType::Colon, "Expected colon")?.clone();
+        let colon = self
+            .get_or_error(TokenType::Colon, "Expected colon")?
+            .clone();
         let value = self.parse_literal()?;
 
         Ok(Node::Property(Box::new(key), colon, Box::new(value)))
     }
 
     fn parse_list(&mut self) -> Result<Node, String> {
-        let left = self.get_or_error(TokenType::LeftBracket, "Expected [")?.clone();
+        let left = self
+            .get_or_error(TokenType::LeftBracket, "Expected [")?
+            .clone();
 
         let mut properties = vec![];
 
-        if self.get_current_token().token_type !=  TokenType::RightBracket {
+        if self.get_current_token().token_type != TokenType::RightBracket {
             properties.push(self.parse_literal()?);
 
             while self.match_token(TokenType::Comma) {
@@ -136,7 +140,9 @@ impl Parser {
             }
         }
 
-        let right = self.get_or_error(TokenType::RightBracket, "Expected ]")?.clone();
+        let right = self
+            .get_or_error(TokenType::RightBracket, "Expected ]")?
+            .clone();
 
         Ok(Node::List(left, properties, right))
     }
@@ -170,7 +176,7 @@ impl Parser {
             return self.parse_object();
         }
 
-       Err("Unknown literal".to_string())
+        Err("Unknown literal".to_string())
     }
 
     fn get_or_error(&mut self, token_type: TokenType, error: &str) -> Result<&Token, String> {
@@ -227,7 +233,12 @@ impl Visitor<String> for PrettyPrint {
             .map(|node| node.accept(self))
             .collect::<String>();
 
-        format!("{}{}{}", left.literal.to_string(), properties, right.literal.to_string())
+        format!(
+            "{}{}{}",
+            left.literal.to_string(),
+            properties,
+            right.literal.to_string()
+        )
     }
 
     fn visit_property(&self, key: &Node, colon: &Token, value: &Node) -> String {
@@ -245,7 +256,12 @@ impl Visitor<String> for PrettyPrint {
             .map(|node| node.accept(self))
             .collect::<String>();
 
-        format!("{}{}{}", left.literal.to_string(), nodes, right.literal.to_string())
+        format!(
+            "{}{}{}",
+            left.literal.to_string(),
+            nodes,
+            right.literal.to_string()
+        )
     }
 }
 
@@ -270,9 +286,7 @@ mod node_tests {
                     Token::new(TokenType::Colon, Literal::String(":".to_string())),
                     Box::new(Node::List(
                         Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
-                        vec![
-                            Node::Primary(Literal::Bool(false)),
-                        ],
+                        vec![Node::Primary(Literal::Bool(false))],
                         Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
                     )),
                 ),
@@ -288,7 +302,7 @@ mod node_tests {
     #[test]
     fn parse() {
         let mut parser = Parser::new(vec![
-            Token::new(TokenType::LeftBracket,  Literal::String("[".to_string())),
+            Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
             Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
@@ -296,23 +310,19 @@ mod node_tests {
             Token::new(TokenType::Colon, Literal::String(":".to_string())),
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
-
             Token::new(TokenType::String, Literal::String("message".to_string())),
             Token::new(TokenType::Colon, Literal::String(":".to_string())),
-            Token::new(TokenType::LeftBracket,  Literal::String("[".to_string())),
-            Token::new(TokenType::RightBracket,  Literal::String("]".to_string())),
-            Token::new(TokenType::RightBrace,  Literal::String("}".to_string())),
-            Token::new(TokenType::RightBracket,  Literal::String("]".to_string())),
+            Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
+            Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
+            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
+            Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
         ]);
 
-        let mut parser = Parser::new(vec![
-            Token::new(TokenType::String, Literal::Number(325.0)),
-        ]);
+        let mut parser = Parser::new(vec![Token::new(TokenType::String, Literal::Number(325.0))]);
         let ast = parser.parse();
 
-
         println!("{:#?}", ast);
-        
+
         let p = PrettyPrint;
         let res = p.print(&ast.unwrap());
         println!("{}", res);
