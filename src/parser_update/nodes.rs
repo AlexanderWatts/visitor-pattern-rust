@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
     LeftBrace,
@@ -35,7 +37,7 @@ impl Token {
 pub trait Visitor<T> {
     fn visit_primary(&self, value: &Literal) -> T;
     fn visit_object(&self, left: &Token, properties: &Vec<Node>, right: &Token) -> T;
-    fn visit_property(&self, key: &Node, colon: &Token, value: &Node) -> T;
+    fn visit_property(&self, key: &Token, colon: &Token, value: &Node) -> T;
     fn visit_list(&self, left: &Token, nodes: &Vec<Node>, right: &Token) -> T;
 }
 
@@ -62,7 +64,7 @@ impl ToString for Literal {
 pub enum Node {
     Primary(Literal),
     Object(Token, Vec<Node>, Token),
-    Property(Box<Node>, Token, Box<Node>),
+    Property(Token, Token, Box<Node>),
     List(Token, Vec<Node>, Token),
 }
 
@@ -96,14 +98,41 @@ impl Parser {
             .get_or_error(TokenType::LeftBrace, "Expected {")?
             .clone();
 
-        let mut properties = vec![];
+        let mut p: HashMap<String, Node> = HashMap::new();
 
         if self.get_current_token().token_type != TokenType::RightBrace {
-            properties.push(self.parse_property()?);
+            match self.parse_property()? {
+                Node::Property(key, colon, value) => {
+                    match p.entry(key.literal.to_string()) {
+                        std::collections::hash_map::Entry::Occupied(_) => Err(format!(
+                            "Duplicate property key {} found",
+                            key.literal.to_string()
+                        ))?,
+                        std::collections::hash_map::Entry::Vacant(entry) => {
+                            entry.insert(Node::Property(key, colon, value))
+                        }
+                    };
+                }
+                _ => {}
+            }
 
             while self.match_token(TokenType::Comma) {
                 self.get_token_advance();
-                properties.push(self.parse_property()?);
+
+                match self.parse_property()? {
+                    Node::Property(key, colon, value) => {
+                        match p.entry(key.literal.to_string()) {
+                            std::collections::hash_map::Entry::Occupied(_) => Err(format!(
+                                "Duplicate property key {} found",
+                                key.literal.to_string()
+                            ))?,
+                            std::collections::hash_map::Entry::Vacant(entry) => {
+                                entry.insert(Node::Property(key, colon, value))
+                            }
+                        };
+                    }
+                    _ => {}
+                }
             }
         }
 
@@ -111,17 +140,21 @@ impl Parser {
             .get_or_error(TokenType::RightBrace, "Expected }")?
             .clone();
 
-        Ok(Node::Object(left, properties, right))
+        let r: Vec<Node> = p.into_values().collect();
+        Ok(Node::Object(left, r, right))
     }
 
     fn parse_property(&mut self) -> Result<Node, String> {
-        let key = self.parse_literal()?;
+        dbg!(self.get_current_token());
+        let key = self
+            .get_or_error(TokenType::Identifier, "Expected identifier")?
+            .clone();
         let colon = self
             .get_or_error(TokenType::Colon, "Expected colon")?
             .clone();
         let value = self.parse_literal()?;
 
-        Ok(Node::Property(Box::new(key), colon, Box::new(value)))
+        Ok(Node::Property(key, colon, Box::new(value)))
     }
 
     fn parse_list(&mut self) -> Result<Node, String> {
@@ -241,10 +274,10 @@ impl Visitor<String> for PrettyPrint {
         )
     }
 
-    fn visit_property(&self, key: &Node, colon: &Token, value: &Node) -> String {
+    fn visit_property(&self, key: &Token, colon: &Token, value: &Node) -> String {
         format!(
             "{}{}{}",
-            key.accept(self),
+            key.literal.to_string(),
             colon.literal.to_string(),
             value.accept(self)
         )
@@ -277,12 +310,12 @@ mod node_tests {
             Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
             vec![
                 Node::Property(
-                    Box::new(Node::Primary(Literal::Null)),
+                    Token::new(TokenType::Identifier, Literal::String("number".to_string())),
                     Token::new(TokenType::Colon, Literal::String(":".to_string())),
                     Box::new(Node::Primary(Literal::Number(32.0))),
                 ),
                 Node::Property(
-                    Box::new(Node::Primary(Literal::String("data".to_string()))),
+                    Token::new(TokenType::Identifier, Literal::String("list".to_string())),
                     Token::new(TokenType::Colon, Literal::String(":".to_string())),
                     Box::new(Node::List(
                         Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
@@ -306,11 +339,17 @@ mod node_tests {
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
             Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
-            Token::new(TokenType::String, Literal::String("message".to_string())),
+            Token::new(
+                TokenType::Identifier,
+                Literal::String("message".to_string()),
+            ),
             Token::new(TokenType::Colon, Literal::String(":".to_string())),
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
-            Token::new(TokenType::String, Literal::String("message".to_string())),
+            Token::new(
+                TokenType::Identifier,
+                Literal::String("obj".to_string()),
+            ),
             Token::new(TokenType::Colon, Literal::String(":".to_string())),
             Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
             Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
@@ -318,7 +357,7 @@ mod node_tests {
             Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
         ]);
 
-        let mut parser = Parser::new(vec![Token::new(TokenType::String, Literal::Number(325.0))]);
+        //let mut parser = Parser::new(vec![Token::new(TokenType::String, Literal::Number(325.0))]);
         let ast = parser.parse();
 
         println!("{:#?}", ast);
