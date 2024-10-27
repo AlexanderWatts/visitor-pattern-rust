@@ -249,105 +249,51 @@ impl PrettyPrint {
         root.accept(self)
     }
 
+    fn i(&mut self) {
+        println!("indent");
+    }
+
     pub fn dfs(&self, root: &Node) -> String {
        self.trav(root, 0)
     }
 
     fn trav(&self, node: &Node, mut depth: u32) -> String {
+        depth += 1;
+        println!("{depth}");
+
         let mid = match node {
-            Node::Primary(literal) => {
-                literal.to_string()
-            },
+            Node::Primary(literal) => literal.to_string(),
             Node::Object(left_brace, vec, right_brace) => {
-                let brace_space = " ".repeat((depth * 4)as usize);
-
-                depth += 1;
-
-                let property_space = " ".repeat((depth * 4)as usize);
-
                 let mut buf = String::new();
-
-                if depth < 1 {
-                    buf += "\n";
-                }
-
                 buf += left_brace.literal.to_string().as_str();
 
-                if !vec.is_empty() {
-                    buf += "\n";
-                }
-
-                for (i, node) in vec.into_iter().enumerate() {
-                    buf += &property_space;
+                for node in vec {
+                    buf += &depth.to_string();
                     buf += self.trav(node, depth).as_str();
-
-                    if i < vec.len() - 1 {
-                        buf += ",";
-                    }
-
-                    buf += "\n";
                 }
 
-                if !vec.is_empty() {
-                    buf += &brace_space;
-                }
                 buf += right_brace.literal.to_string().as_str();
-
-                depth -= 1;
-
-                buf
+                return buf;
             },
-            Node::Property(key, colon, value) => {
-                let mut buf = String::new();
-                buf += format!("\"{}\"", &key.literal.to_string()).as_str();
-                buf += &colon.literal.to_string();
-                buf += " ";
-                buf += &self.trav(&value, depth);
-
-                buf
-            }
+            Node::Property(token, token1, node) => "property".to_string(),
             Node::List(left_bracket, vec, right_bracket) => {
-                let bracket_space = " ".repeat((depth * 4)as usize);
-                depth += 1;
-                let primary_space = " ".repeat((depth * 4)as usize);
-
                 let mut buf = String::new();
-
-                if depth < 1 {
-                    buf += "\n";
-                }
-
                 buf += left_bracket.literal.to_string().as_str();
 
-                if !vec.is_empty() {
-                    buf += "\n";
-                }
+                let spaces = 2_u32.pow(depth) * 2;
 
-                for (i, node) in vec.into_iter().enumerate() {
-                    buf += &primary_space;
+                for node in vec {
+                    buf += &spaces.to_string();
                     buf += self.trav(node, depth).as_str();
-
-                    println!("{i}-{}", vec.len());
-                    if i < vec.len() - 1 {
-                        buf += ",";
-                    }
-
-                    buf += "\n";
                 }
 
-                if !vec.is_empty() {
-                    buf += &bracket_space;
-                }
                 buf += right_bracket.literal.to_string().as_str();
-
-                depth -= 1;
-
-                buf
+                return buf;
             },
         };
 
+        depth -= 1;
 
-        println!("{mid}{depth}");
         mid
     }
 }
@@ -472,84 +418,35 @@ mod node_tests {
     fn dfs() {
         let mut parser = Parser::new(vec![
             Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
+
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
-            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("message".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
             Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::Comma, Literal::String(",".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("obj".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
+
             Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+
+            Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
             Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
-            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+            Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
+
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+            Token::new(TokenType::String, Literal::Bool(true)),
+
             Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
         ]);
 
-        let mut parser = Parser::new(vec![
-            Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
-
-            Token::new(TokenType::True, Literal::Bool(true)),
-            Token::new(TokenType::Comma, Literal::String(",".to_string())),
-
-
-            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("obj".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
-            Token::new(TokenType::LeftBracket, Literal::String("[".to_string())),
-
-            Token::new(TokenType::True, Literal::Bool(true)),
-            Token::new(TokenType::Comma, Literal::String(",".to_string())),
-
-            Token::new(TokenType::True, Literal::Bool(true)),
-            Token::new(TokenType::Comma, Literal::String(",".to_string())),
-
-
-            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("obj".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
-            Token::new(TokenType::True, Literal::Bool(true)),
-
-            Token::new(TokenType::Comma, Literal::String(",".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("main".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
-            Token::new(TokenType::True, Literal::Bool(true)),
-
-            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
-            
-            Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
-            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
-
-            Token::new(TokenType::Comma, Literal::String(",".to_string())),
-            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
-            Token::new(
-                TokenType::Identifier,
-                Literal::String("other".to_string()),
-            ),
-            Token::new(TokenType::Colon, Literal::String(":".to_string())),
-            Token::new(TokenType::True, Literal::Bool(true)),
-            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
-
-            Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
-        ]);
         let root = parser.parse().unwrap();
-        //println!("{:#?}", &root);
+        println!("{:#?}", &root);
 
         let pretty = PrettyPrint;
         let res = pretty.dfs(&root);
