@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenType {
@@ -98,17 +98,17 @@ impl Parser {
             .get_or_error(TokenType::LeftBrace, "Expected {")?
             .clone();
 
-        let mut p: HashMap<String, Node> = HashMap::new();
+        let mut p: BTreeMap<String, Node> = BTreeMap::new();
 
         if self.get_current_token().token_type != TokenType::RightBrace {
             match self.parse_property()? {
                 Node::Property(key, colon, value) => {
                     match p.entry(key.literal.to_string()) {
-                        std::collections::hash_map::Entry::Occupied(_) => Err(format!(
+                        std::collections::btree_map::Entry::Occupied(_) => Err(format!(
                             "Duplicate property key {} found",
                             key.literal.to_string()
                         ))?,
-                        std::collections::hash_map::Entry::Vacant(entry) => {
+                        std::collections::btree_map::Entry::Vacant(entry) => {
                             entry.insert(Node::Property(key, colon, value))
                         }
                     };
@@ -122,11 +122,11 @@ impl Parser {
                 match self.parse_property()? {
                     Node::Property(key, colon, value) => {
                         match p.entry(key.literal.to_string()) {
-                            std::collections::hash_map::Entry::Occupied(_) => Err(format!(
+                            std::collections::btree_map::Entry::Occupied(_) => Err(format!(
                                 "Duplicate property key {} found",
                                 key.literal.to_string()
                             ))?,
-                            std::collections::hash_map::Entry::Vacant(entry) => {
+                            std::collections::btree_map::Entry::Vacant(entry) => {
                                 entry.insert(Node::Property(key, colon, value))
                             }
                         };
@@ -254,9 +254,9 @@ impl PrettyPrint {
     }
 
     fn trav(&self, node: &Node, mut depth: u32) -> String {
-        let mid = match node {
+        match node {
             Node::Primary(literal) => {
-                literal.to_string()
+                return literal.to_string()
             },
             Node::Object(left_brace, vec, right_brace) => {
                 let brace_space = " ".repeat((depth * 4)as usize);
@@ -295,7 +295,7 @@ impl PrettyPrint {
 
                 depth -= 1;
 
-                buf
+                return buf
             },
             Node::Property(key, colon, value) => {
                 let mut buf = String::new();
@@ -304,7 +304,7 @@ impl PrettyPrint {
                 buf += " ";
                 buf += &self.trav(&value, depth);
 
-                buf
+                return buf
             }
             Node::List(left_bracket, vec, right_bracket) => {
                 let bracket_space = " ".repeat((depth * 4)as usize);
@@ -327,7 +327,6 @@ impl PrettyPrint {
                     buf += &primary_space;
                     buf += self.trav(node, depth).as_str();
 
-                    println!("{i}-{}", vec.len());
                     if i < vec.len() - 1 {
                         buf += ",";
                     }
@@ -342,13 +341,9 @@ impl PrettyPrint {
 
                 depth -= 1;
 
-                buf
+                return buf
             },
-        };
-
-
-        println!("{mid}{depth}");
-        mid
+        }
     }
 }
 
@@ -548,8 +543,28 @@ mod node_tests {
 
             Token::new(TokenType::RightBracket, Literal::String("]".to_string())),
         ]);
+        let mut parser = Parser::new(vec![
+            Token::new(TokenType::LeftBrace, Literal::String("{".to_string())),
+
+            Token::new(
+                TokenType::Identifier,
+                Literal::String("other".to_string()),
+            ),
+            Token::new(TokenType::Colon, Literal::String(":".to_string())),
+            Token::new(TokenType::True, Literal::Bool(true)),
+            Token::new(TokenType::Comma, Literal::String(",".to_string())),
+
+            Token::new(
+                TokenType::Identifier,
+                Literal::String("name".to_string()),
+            ),
+            Token::new(TokenType::Colon, Literal::String(":".to_string())),
+            Token::new(TokenType::String, Literal::String("Alex".to_string())),
+
+            Token::new(TokenType::RightBrace, Literal::String("}".to_string())),
+        ]);
         let root = parser.parse().unwrap();
-        //println!("{:#?}", &root);
+        println!("{:#?}", &root);
 
         let pretty = PrettyPrint;
         let res = pretty.dfs(&root);
