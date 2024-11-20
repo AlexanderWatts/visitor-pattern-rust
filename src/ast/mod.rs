@@ -1,13 +1,25 @@
-pub trait Visitor<T> {
-    fn visit_property(&self, property: &Property) -> T;
+pub trait Visitor {
+    type T;
+
+    fn visit_property(&self, property: &Property) -> Self::T;
 }
+
 pub trait AstNode {
-    fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T;
+    type T;
+    fn accept(&self, visitor: &dyn Visitor<T = Self::T>) -> Self::T;
 }
 
 pub struct AstPrinter;
 
-impl Visitor<String> for AstPrinter {
+impl AstPrinter {
+    pub fn print(&self, root: &dyn AstNode<T = String>) -> String {
+       root.accept(self)
+    }
+}
+
+impl Visitor for AstPrinter {
+    type T = String;
+
     fn visit_property(&self, property: &Property) -> String {
         format!(
             "{}{}{}",
@@ -34,7 +46,9 @@ impl Property {
 }
 
 impl AstNode for Property {
-    fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T {
+    type T = String;
+
+    fn accept(&self, visitor: &dyn Visitor<T = Self::T>) -> Self::T {
         visitor.visit_property(self)
     }
 }
@@ -60,5 +74,15 @@ mod tests {
         let stringified = property.accept(&ast_printer);
 
         assert_eq!(stringified, "message:Hello, World!");
+    }
+
+    #[test]
+    fn invoke_via_visitor() {
+        let property = Property::new("message", ":", "Hello, World!");
+
+        let ast_printer = AstPrinter;
+        let res = ast_printer.print(&property);
+        
+        assert_eq!(res, "message:Hello, World!");
     }
 }
